@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from bots.echo_bot import run_bot
+from bots.researcher_bot import run_bot
 
 class Command(BaseCommand):
     help = 'Runs the Telegram bot'
