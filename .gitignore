@@ -41,3 +41,17 @@ static/
 Thumbs.db
 
 .venv
+
+# Terraform files
+.terraform
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+terraform.tfvars
+
+# SSH keys
+~/.ssh/aws_deployer
+~/.ssh/aws_deployer.pub
+
+# Environment files
+.env
