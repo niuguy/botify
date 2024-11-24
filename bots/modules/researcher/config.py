@@ -1,7 +1,7 @@
 # Bot configuration settings
 CONFIG = {
     "enabled": True,
-    "token": "7792066420:AAGLFEUArN_w4K9VDodOdq7cmk2IJpowP8I",
+    "token_env": "RESEARCHER_TOKEN_ENV",  # Environment variable name for the bot token
     "settings": {
         # Add your bot specific settings here
     }

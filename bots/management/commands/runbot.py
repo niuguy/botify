@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 import importlib
 import signal
 import sys
-
+import os
 class Command(BaseCommand):
     help = 'Runs a specific Telegram bot'
 
@@ -20,9 +20,9 @@ class Command(BaseCommand):
             if not config_module.CONFIG['enabled']:
                 self.stdout.write(self.style.ERROR(f'Bot "{bot_name}" is disabled in config'))
                 return
-
+            
             # Create bot instance
-            bot = bot_module.Bot(config_module.CONFIG['token'])
+            bot = bot_module.Bot(config_module.CONFIG['token_env'])
             self.stdout.write(self.style.SUCCESS(f'Starting bot "{bot_name}"...'))
 
             # Setup signal handler for graceful shutdown
