@@ -12,6 +12,9 @@ dependencies = [
     "typer>=0.15.1",
 ]
 
+[project.scripts]
+botify = "botify.__main__:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

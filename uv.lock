@@ -40,7 +40,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.6" },
     { name = "pydantic", specifier = ">=2.10.3" },
     { name = "ruff", specifier = ">=0.8.1" },
-    { name = "typer" },
+    { name = "typer", specifier = ">=0.15.1" },
     { name = "uvicorn", specifier = ">=0.32.1" },
 ]
 
