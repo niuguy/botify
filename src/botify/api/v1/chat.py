@@ -8,4 +8,3 @@ router = APIRouter(tags=["chat"])
 # TODO  return http response with status code 200
 async def chat() -> None:
     pass
-    

@@ -1,11 +1,11 @@
-from fastapi import FastAPI
-def create_app():
-    app = FastAPI()
-    return app
+from .app import create_app
+from telegram import Update
 
 
-if __name__=="__main__":
-    import uvicorn
-
+def run_app() -> None:
     app = create_app()
-    uvicorn.run(app, host="0.0.0.0", port=8860, log_level="debug", reload=True)
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
+
+
+if __name__ == "__main__":
+    run_app()
