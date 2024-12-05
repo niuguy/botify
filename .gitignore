@@ -1,11 +1,9 @@
 # Python
-*.py[cod]
 __pycache__/
+*.py[cod]
+*$py.class
 *.so
 .Python
-env/
-venv/
-.env
 build/
 develop-eggs/
 dist/
@@ -17,41 +15,42 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/
-static/
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
 
-# IDE specific files
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
-
-# OS specific files
 .DS_Store
-Thumbs.db
 
-.venv
+# FastAPI
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.mypy_cache/
 
-# Terraform files
-.terraform
-*.tfstate
-*.tfstate.*
-.terraform.lock.hcl
-terraform.tfvars
+# Logs
+*.log
+logs/
 
-# SSH keys
-~/.ssh/aws_deployer
-~/.ssh/aws_deployer.pub
+# Local development settings
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
 
-# Environment files
-.env
+# Dependencies
+node_modules/
