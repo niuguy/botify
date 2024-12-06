@@ -1,8 +1,18 @@
 from telegram import ForceReply, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from langchain_core.messages import HumanMessage
+from langchain_core.chat_history import InMemoryChatMessageHistory
 from botify.logging.logger import logger
 from botify.agent.factory import AgentFactory
+import uuid
+chats_by_session_id = {}
+
+def get_chat_history(session_id: str) -> InMemoryChatMessageHistory:
+    chat_history = chats_by_session_id.get(session_id)
+    if chat_history is None:
+        chat_history = InMemoryChatMessageHistory()
+        chats_by_session_id[session_id] = chat_history
+    return chat_history
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -28,6 +38,8 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Check if an agent is selected
     current_agent = context.user_data.get("current_agent")
+    session_id = context.user_data.get("session_id")
+
     if not current_agent:
         await update.message.reply_text(
             "Please select an agent first using /agents command"
@@ -37,10 +49,11 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         # Execute the agent's graph with the user's message
         result = current_agent.invoke(
-            {"messages": [HumanMessage(content=update.message.text)]}
+            {"messages": [HumanMessage(content=update.message.text)]},
+            config= {"configurable": {"session_id": session_id}}
         )
         logger.info(f"Agent result: {result}")
-        await update.message.reply_text(result["messages"][-1].content)
+        await update.message.reply_text(result["messages"].content)
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
         await update.message.reply_text(
@@ -81,9 +94,12 @@ async def agent_selection_callback(
     agent_name = query.data.split(":")[1]
     # user_id = update.effective_user.id
     logger.info(f"Selected agent: {agent_name}")
+    session_id = str(uuid.uuid4())
+
     agent = AgentFactory.create(agent_name)
     # Store the selected agent type in user-specific context
     context.user_data["current_agent"] = agent
+    context.user_data["session_id"] = session_id
 
     # Initialize the agent for this user if not exists
     if "agent" not in context.user_data:
