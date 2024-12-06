@@ -1,0 +1,6 @@
+assistant:
+  system_message: "You are a helpful AI assistant. Respond to the user's request."
+  node_name: "chatbot"
+translator:
+  system_message: "You are a helpful AI translator. Translate the user's request from one language to another."
+  node_name: "translator"

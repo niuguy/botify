@@ -15,9 +15,21 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    CallbackQueryHandler,
+)
 
-from botify.handlers.base import start, help_command, echo, agents, agent_selection_callback
+from botify.handlers.base import (
+    start,
+    help_command,
+    echo,
+    agents,
+    agent_selection_callback,
+)
 from botify.logging.logger import logger
 
 
@@ -32,5 +44,7 @@ def create_app() -> Application:
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
     app.add_handler(CommandHandler("agents", agents))
-    app.add_handler(CallbackQueryHandler(agent_selection_callback, pattern="^select_agent:")) 
+    app.add_handler(
+        CallbackQueryHandler(agent_selection_callback, pattern="^select_agent:")
+    )
     return app
