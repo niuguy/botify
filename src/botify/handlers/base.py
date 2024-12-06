@@ -78,10 +78,10 @@ async def agent_selection_callback(
     await query.answer()
 
     # Extract agent type from callback data
-    agent_type = query.data.split(":")[1]
+    agent_name = query.data.split(":")[1]
     # user_id = update.effective_user.id
-
-    agent = AgentFactory.create(agent_type)
+    logger.info(f"Selected agent: {agent_name}")
+    agent = AgentFactory.create(agent_name)
     # Store the selected agent type in user-specific context
     context.user_data["current_agent"] = agent
 
@@ -92,4 +92,4 @@ async def agent_selection_callback(
         # context.user_data['agent'] = agent
         pass
 
-    await query.edit_message_text(f"Selected agent: {agent_type}")
+    await query.edit_message_text(f"Selected agent: {agent_name}")

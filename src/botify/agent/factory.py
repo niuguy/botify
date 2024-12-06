@@ -73,40 +73,40 @@ class AgentFactory:
         workflow.set_finish_point(node_name)
 
         return workflow.compile()
+    
+
 
     @classmethod
     def create(
         cls,
-        agent_type: str,
+        agent_name: str,
         llm: ChatOpenAI = ChatOpenAI(model="gpt-4o-mini"),
         **kwargs,
     ) -> Graph:
-        """Create a new LangGraph agent instance.
+        """
+        Create a new LangGraph agent instance.
 
         Args:
-            agent_type: Type of agent to create (e.g., 'prompt')
+            agent_name: Name of the agent to create
             llm: Language model to use with the agent
             **kwargs: Additional configuration for the agent
 
         Returns:
             A compiled LangGraph workflow
-
-        Raises:
-            ValueError: If agent_type is not supported
         """
-        if agent_type not in cls._AGENT_CONFIGS:
-            raise ValueError(f"Unsupported agent type: {agent_type}")
+        if agent_name not in cls._AGENT_CONFIGS:
+            raise ValueError(f"Unsupported agent type: {agent_name}")
 
-        config = cls._AGENT_CONFIGS[agent_type].copy()
+        config = cls._AGENT_CONFIGS[agent_name].copy()
 
         # Override default config with any provided kwargs
         system_message = kwargs.get("system_message", config["system_message"])
         node_name = kwargs.get("node_name", config["node_name"])
+        agent_type = kwargs.get("agent_type", config["type"])
+    
 
         if agent_type == "prompt":
-            return cls.create_prompt_agent(
-                llm=llm, system_message=system_message, node_name=node_name
-            )
+            return cls.create_prompt_agent(llm=llm, system_message=system_message, node_name=node_name)
 
     @classmethod
     def get_agent_list(cls) -> list[str]:
