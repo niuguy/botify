@@ -54,3 +54,4 @@ logs/
 
 # Dependencies
 node_modules/
+.ruff_cache/

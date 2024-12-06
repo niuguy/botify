@@ -1,30 +1,8 @@
-#!/usr/bin/env python
-# pylint: disable=unused-argument
-# This program is dedicated to the public domain under the CC0 license.
-
-"""
-Simple Bot to reply to Telegram messages.
-
-First, a few handler functions are defined. Then, those functions are passed to
-the Application and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Basic Echobot example, repeats messages.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
-import logging
-
-from telegram import ForceReply, Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    ContextTypes,
-    MessageHandler,
-    filters,
-)
+from telegram import ForceReply, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes
+from langchain_core.messages import HumanMessage
+from botify.logging.logger import logger
+from botify.agent.factory import AgentFactory
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -44,25 +22,70 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
-    await update.message.reply_text(update.message.text)
+    """Process the user message using the selected agent."""
+    logger.info(f"Processing message: {update.message.text}")
+    user_id = update.message.from_user.id
+    
+    # Check if an agent is selected
+    current_agent_type = context.user_data.get('current_agent')
+    if not current_agent_type:
+        await update.message.reply_text("Please select an agent first using /agents command")
+        return
+    # create the agent
+    current_agent = AgentFactory.create(current_agent_type)
+    try:
+        # Execute the agent's graph with the user's message
+        result = current_agent.invoke({"messages": [HumanMessage(content=update.message.text)]})
+        logger.info(f"Agent result: {result}")
+        await update.message.reply_text(result["messages"][-1].content)
+    except Exception as e:
+        logger.error(f"Error processing message: {str(e)}")
+        await update.message.reply_text("Sorry, there was an error processing your message.")
 
 
-def main() -> None:
-    """Start the bot."""
-    # Create the Application and pass it your bot's token.
-    application = Application.builder().token("TOKEN").build()
+async def agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle the /agents command - show available agents and allow selection."""
+    user_id = update.effective_user.id
+    
+    # Get available agent types from AgentFactory
+    available_agents = list(AgentFactory._AGENT_CONFIGS.keys())
+    
+    # Create keyboard with available agents
+    keyboard = [
+        [InlineKeyboardButton(agent_type, callback_data=f"select_agent:{agent_type}")]
+        for agent_type in available_agents
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Show current agent if exists
+    current_agent = context.user_data.get('current_agent', 'None')
+    message = (
+        f"Current agent: {current_agent}\n"
+        "Available agents:"
+    )
+    
+    await update.message.reply_text(message, reply_markup=reply_markup)
 
-    # on different commands - answer in Telegram
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
+async def agent_selection_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle agent selection from inline keyboard."""
+    query = update.callback_query
+    await query.answer()
+    
+    # Extract agent type from callback data
+    agent_type = query.data.split(':')[1]
+    user_id = update.effective_user.id
+    
+    # Store the selected agent type in user-specific context
+    context.user_data['current_agent'] = agent_type
+    
+    # Initialize the agent for this user if not exists
+    if 'agent' not in context.user_data:
+        # Note: You'll need to add LLM initialization here
+        # agent = AgentFactory.create(agent_type, llm, **config)
+        # context.user_data['agent'] = agent
+        pass
+    
+    await query.edit_message_text(f"Selected agent: {agent_type}")
 
-    # on non command i.e message - echo the message on Telegram
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-    # Run the bot until the user presses Ctrl-C
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-
-
-if __name__ == "__main__":
-    main()
