@@ -1,10 +1,9 @@
 TODO:
+- add tools to agents
 - add rag agent
 - add multi-agents
-- run bot in separate thread
-- test concurrent execution
 - optimize inline keyboard
-- setup UI for agents management
+- setup Mini appUI for agents management
 
 
 reference:
