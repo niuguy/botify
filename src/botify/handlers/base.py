@@ -48,12 +48,13 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     try:
         # Execute the agent's graph with the user's message
+        logger.info(f"Invoking agent: {current_agent}")
         result = current_agent.invoke(
             {"messages": [HumanMessage(content=update.message.text)]},
             config= {"configurable": {"session_id": session_id}}
         )
         logger.info(f"Agent result: {result}")
-        await update.message.reply_text(result["messages"].content)
+        await update.message.reply_text(result["messages"][-1].content)
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
         await update.message.reply_text(

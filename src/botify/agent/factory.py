@@ -6,13 +6,35 @@ from langchain_core.runnables import RunnableConfig
 # from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 
+from langchain_core.tools import tool
 
+from langgraph.prebuilt import ToolNode
 
-from langgraph.graph import StateGraph, Graph,MessagesState
+from langgraph.graph import StateGraph, Graph,MessagesState, END, START
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import AIMessage
 
 import yaml
 from pathlib import Path
+from botify.logging.logger import logger
+
+@tool
+def get_weather(location: str):
+    """Call to get the current weather."""
+    logger.info(f"get_weather location: {location}")
+    if location.lower() in ["sf", "san francisco"]:
+        return "It's 60 degrees and foggy."
+    else:
+        return "It's 90 degrees and sunny."
+    
+@tool
+def get_coolest_cities():
+    """Get a list of coolest cities"""
+    return "nyc, sf"
+
+
+tools = [get_weather, get_coolest_cities]
+tool_node = ToolNode(tools)
 
 
 class AgentState(TypedDict):
@@ -25,7 +47,7 @@ class AgentState(TypedDict):
 class AgentModel:
     """Wrapper class for LLM that manages chat history."""
     def __init__(self, llm: ChatOpenAI):
-        self.llm = llm
+        self.llm = ChatOpenAI(model="gpt-4o").bind_tools(tools)
         self._chat_histories: Dict[str, InMemoryChatMessageHistory] = {}
 
     def get_chat_history(self, session_id: str) -> InMemoryChatMessageHistory:
@@ -36,19 +58,39 @@ class AgentModel:
     
     def call_llm(self, state: MessagesState, config: RunnableConfig) -> list[BaseMessage]:
         # Make sure that config is populated with the session id
-        if "configurable" not in config or "session_id" not in config["configurable"]:
-            raise ValueError(
-                "Make sure that the config includes the following information: {'configurable': {'session_id': 'some_value'}}"
+        logger.info(f"call_llm State: {state}")
+        try:
+            if "configurable" not in config or "session_id" not in config["configurable"]:
+                raise ValueError(
+                    "Make sure that the config includes the following information: {'configurable': {'session_id': 'some_value'}}"
             )
-        # Fetch the history of messages and append to it any new messages.
-        chat_history = self.get_chat_history(config["configurable"]["session_id"])
-        messages = list(chat_history.messages) + state["messages"]
-        ai_message = self.llm.invoke(messages)
-        # Finally, update the chat message history to include
-        # the new input message from the user together with the
-        # repsonse from the model.
-        chat_history.add_messages(state["messages"] + [ai_message])
-        return {"messages": ai_message}
+            # Fetch the history of messages and append to it any new messages.
+            chat_history = self.get_chat_history(config["configurable"]["session_id"])
+            messages = list(chat_history.messages) + state["messages"]
+            ai_message = self.llm.invoke(messages)
+            # Finally, update the chat message history to include
+            # the new input message from the user together with the
+            # repsonse from the model.
+            chat_history.add_messages(state["messages"] + [ai_message])
+        except Exception as e:
+            logger.error(f"Error in call_llm: {e}")
+        return {"messages": [ai_message]}
+
+    def should_continue(self, state: MessagesState, config: RunnableConfig) -> bool:
+        try:
+            aiMessage = state["messages"][-1]
+            # what is the type of aiMessage?
+            logger.info(f"Type of aiMessage: {type(aiMessage)}")    
+            logger.info(f"AiMessage: {aiMessage}")
+            logger.info(f"AiMessage tool_calls: {aiMessage.tool_calls}")
+            # last_message = messages[-1]
+            if aiMessage.tool_calls:
+                return "tools"
+        except Exception as e:
+            logger.error(f"Error in should_continue: {e}")  
+        return END
+
+
 
     # def invoke(self, messages: list[BaseMessage], config: dict) -> BaseMessage:
     #     """Process messages with chat history context."""
@@ -97,37 +139,22 @@ class AgentFactory:
         """
         # Create agent model with history management
         agent_model = AgentModel(llm)
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", system_message),
-                ("human", "{input}"),
-            ]
-        )
-
-        def process(state: AgentState, config: dict) -> AgentState:
-            messages = state["messages"]
-            last_message = messages[-1].content
-
-            # Use agent_model to process with history
-            response = agent_model.call_llm(
-                prompt.format_messages(input=last_message),
-                config
-            )
-            messages.append(response)
-
-            return {"messages": messages, "next": None}
 
         # Create the graph
         workflow = StateGraph(AgentState)
 
         # Add the processing node
-        workflow.add_node(node_name, agent_model.call_llm)
+        workflow.add_node("agent", agent_model.call_llm)
+        workflow.add_node("tools", tool_node)
 
         # Set the entry point
-        workflow.set_entry_point(node_name)
+        # workflow.set_entry_point("agent")
+        workflow.add_edge(START, "agent")
+        workflow.add_conditional_edges("agent", agent_model.should_continue, ["tools", END])
+        workflow.add_edge("tools", "agent")
 
         # # Add the end condition
-        workflow.set_finish_point(node_name)
+        # workflow.set_finish_point(node_name)
 
         return workflow.compile()
     
@@ -137,7 +164,7 @@ class AgentFactory:
     def create(
         cls,
         agent_name: str,
-        llm: ChatOpenAI = ChatOpenAI(model="gpt-4o-mini"),
+        llm: ChatOpenAI = ChatOpenAI(model="gpt-4-turbo"),
         **kwargs,
     ) -> Graph:
         """
