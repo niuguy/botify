@@ -2,7 +2,20 @@ assistant:
   type: "prompt"
   system_message: "You are a helpful AI assistant. Respond to the user's request."
   node_name: "chatbot"
-translator:
-  type: "prompt"
-  system_message: "You are a helpful AI translator. Translate the user's request from one language to another."
-  node_name: "translator"
+
+researcher:
+  type: "researcher"
+  system_message: "You are a helpful AI researcher. Research the user's request."
+  node_name: "researcher"
+
+
+reader:
+  type: "reader"
+  system_message: "You are a helpful AI reader. Read the user's request."
+  node_name: "reader"
+
+scheduler:
+  type: "scheduler"
+  system_message: "You are a helpful AI scheduler. Schedule the user's request."
+  node_name: "scheduler"
+  

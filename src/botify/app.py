@@ -24,7 +24,6 @@ from telegram.ext import (
 )
 
 from botify.handlers.base import (
-    start,
     help_command,
     echo,
     agents,
@@ -40,7 +39,6 @@ def create_app() -> Application:
         .token("7545484988:AAHgIZFvd1Fi52MI9v3HROZgO9MhYFNBGak")
         .build()
     )
-    app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
     app.add_handler(CommandHandler("agents", agents))

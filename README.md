@@ -1,3 +1,21 @@
+chat
+    - text
+    - tts
+    - tools
+read
+    - rag
+    - read paper
+research
+    - deep research report
+
+scheduler
+    - 
+
+
+
+
+
+
 TODO:
 - add tools to agents
 - add rag agent

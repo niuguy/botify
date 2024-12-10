@@ -3,9 +3,11 @@ from telegram.ext import ContextTypes
 from langchain_core.messages import HumanMessage
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from botify.logging.logger import logger
-from botify.agent.factory import AgentFactory
+from botify.agent.agent_factory import AgentFactory
 import uuid
+
 chats_by_session_id = {}
+
 
 def get_chat_history(session_id: str) -> InMemoryChatMessageHistory:
     chat_history = chats_by_session_id.get(session_id)
@@ -13,17 +15,6 @@ def get_chat_history(session_id: str) -> InMemoryChatMessageHistory:
         chat_history = InMemoryChatMessageHistory()
         chats_by_session_id[session_id] = chat_history
     return chat_history
-
-
-# Define a few command handlers. These usually take the two arguments update and
-# context.
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /start is issued."""
-    user = update.effective_user
-    await update.message.reply_html(
-        rf"Hi {user.mention_html()}!",
-        reply_markup=ForceReply(selective=True),
-    )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -51,7 +42,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.info(f"Invoking agent: {current_agent}")
         result = current_agent.invoke(
             {"messages": [HumanMessage(content=update.message.text)]},
-            config= {"configurable": {"session_id": session_id}}
+            config={"configurable": {"session_id": session_id}},
         )
         logger.info(f"Agent result: {result}")
         await update.message.reply_text(result["messages"][-1].content)
