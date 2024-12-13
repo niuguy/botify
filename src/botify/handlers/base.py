@@ -1,5 +1,5 @@
 from telegram import ForceReply, Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 from langchain_core.messages import HumanMessage
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from botify.logging.logger import logger
@@ -7,6 +7,9 @@ from botify.agent.agent_factory import AgentFactory
 import uuid
 
 chats_by_session_id = {}
+
+# Define states
+WAITING_FOR_URL = 1
 
 
 def get_chat_history(session_id: str) -> InMemoryChatMessageHistory:
@@ -25,7 +28,25 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Process the user message using the selected agent."""
     logger.info(f"Processing message: {update.message.text}")
-    # user_id = update.message.from_user.id
+
+    # Check if we're waiting for a URL
+    if context.user_data.get("waiting_for_url"):
+        url = update.message.text
+        session_id = str(uuid.uuid4())
+        
+        try:
+            # Create RAG agent with the provided URL
+            agent = AgentFactory.create("reader", url=url)
+            context.user_data["current_agent"] = agent
+            context.user_data["session_id"] = session_id
+            context.user_data["waiting_for_url"] = False  # Reset the waiting state
+            
+            await update.message.reply_text(f"Reader agent created with URL: {url}")
+            return
+        except Exception as e:
+            logger.error(f"Error creating reader agent: {str(e)}")
+            await update.message.reply_text("Invalid URL or error creating reader agent. Please try again.")
+            return
 
     # Check if an agent is selected
     current_agent = context.user_data.get("current_agent")
@@ -36,11 +57,13 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "Please select an agent first using /agents command"
         )
         return
+    
+
 
     try:
         # Execute the agent's graph with the user's message
         logger.info(f"Invoking agent: {current_agent}")
-        result = current_agent.invoke(
+        result = current_agent.run(
             {"messages": [HumanMessage(content=update.message.text)]},
             config={"configurable": {"session_id": session_id}},
         )
@@ -84,8 +107,14 @@ async def agent_selection_callback(
 
     # Extract agent type from callback data
     agent_name = query.data.split(":")[1]
-    # user_id = update.effective_user.id
     logger.info(f"Selected agent: {agent_name}")
+
+    if agent_name == "reader":
+        # Set state to wait for URL
+        context.user_data["waiting_for_url"] = True
+        await query.edit_message_text("Please send the web URL you want to read")
+        return
+    
     session_id = str(uuid.uuid4())
 
     agent = AgentFactory.create(agent_name)

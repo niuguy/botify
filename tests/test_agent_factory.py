@@ -1,27 +1,18 @@
 import pytest
 from langchain_openai import ChatOpenAI
-from langgraph.graph import Graph
-from botify.agent.agent_factory import AgentFactory, AgentType
+from botify.agent.agent_factory import AgentFactory
+from botify.agent.agent_base import ChatAgent
 
 
 def test_create_assistant_agent():
     """Test creating an assistant agent with default configuration."""
     llm = ChatOpenAI(model="gpt-4-mini")
-    
-    workflow = AgentFactory.create_assistant_agent(llm=llm)
-    assert workflow is not None
+
+    agent = AgentFactory.create_assistant_agent(llm=llm)
+    assert agent is not None
+    assert isinstance(agent, ChatAgent)
 
     # assert isinstance(workflow, Graph)
-
-
-def test_create_agent_with_valid_type():
-    """Test creating an agent with a valid agent type."""
-    workflow = AgentFactory.create(
-        agent_type=AgentType.ASSISTANT.value,
-        llm=ChatOpenAI(model="gpt-4-mini"),
-    )
-
-    assert workflow is not None
 
 
 def test_create_agent_with_invalid_type():

@@ -1,11 +1,8 @@
 from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, Graph, START, END
-import yaml
-from pathlib import Path
-from botify.agent.agent_base import AgentModel
-from botify.agent.agent_tool import tool_node
-from botify.agent.agent_base import AgentState
-from enum import Enum, auto
+from langgraph.graph import Graph
+from botify.agent.agent_base import ChatAgent
+from botify.agent.rag_agent import RAGAgent 
+from enum import Enum
 
 
 class AgentType(Enum):
@@ -14,53 +11,79 @@ class AgentType(Enum):
     READER = "reader"
     SCHEDULER = "scheduler"
 
+
 class AgentFactory:
     """Factory class for creating LangGraph-based agents."""
 
-    # def _load_agent_configs() -> dict:
-    #     """Load agent configurations from YAML file."""
-    #     config_path = Path(__file__).parent / "configs" / "agent_configs.yaml"
-    #     with open(config_path, "r") as f:
-    #         return yaml.safe_load(f)
+    @classmethod
+    def create_assistant_agent(cls, llm: ChatOpenAI) -> Graph:
+        agent_model = ChatAgent(llm)
 
-    # _AGENT_CONFIGS = _load_agent_configs()
+        return agent_model
 
     @classmethod
-    def create_assistant_agent(
-        cls, llm: ChatOpenAI
-    ) -> Graph:
-        agent_model = AgentModel(llm)
-        workflow = StateGraph(AgentState)
+    def create_rag_agent(cls, llm: ChatOpenAI) -> Graph:
+        """Creates a RAG-based agent workflow.
 
-        workflow.add_node("agent", agent_model.call_llm)
-        workflow.add_node("tools", tool_node)
+        Args:
+            llm (ChatOpenAI): The language model to use for the agent
 
-        workflow.add_edge(START, "agent")
-        workflow.add_conditional_edges(
-            "agent", agent_model.should_continue, ["tools", END]
-        )
-        workflow.add_edge("tools", "agent")
+        Returns:
+            Graph: Compiled workflow graph for RAG operations
+        """
+        pass
+        # # Initialize RAG agent
+        # rag_agent = RAGAgent()
 
-        return workflow.compile()
+        # # Create workflow
+        # workflow = StateGraph(RagAgentState)
+
+        # # Define the nodes we will cycle between
+        # workflow.add_node("agent", rag_agent.agent)  # Agent decision node
+        # workflow.add_node("retrieve", retriever_tool_node)  # Retrieval node
+        # workflow.add_node("rewrite", rag_agent.rewrite)  # Query rewriting node
+        # workflow.add_node("generate", rag_agent.generate)  # Response generation node
+
+        # # Initial edge: Start -> Agent
+        # workflow.add_edge(START, "agent")
+
+        # # Agent decision edges
+        # workflow.add_conditional_edges(
+        #     "agent",
+        #     tools_condition,
+        #     {
+        #         "tools": "retrieve",  # If tools needed, go to retrieve
+        #         END: END,  # If no tools needed, end
+        #     },
+        # )
+
+        # # Retrieval result edges
+        # workflow.add_conditional_edges(
+        #     "retrieve",
+        #     rag_agent.grade_documents,
+        #     {
+        #         "generate": "generate",  # If documents relevant, generate response
+        #         "rewrite": "rewrite",    # If documents not relevant, rewrite query
+        #     }
+        # )
+
+        # # Final edges
+        # workflow.add_edge("generate", END)  # Generation complete -> End
+        # workflow.add_edge("rewrite", "agent")  # After rewrite -> Back to agent
+
+        # return workflow.compile()
 
     @classmethod
     def create(
         cls,
         agent_type: str,
         llm: ChatOpenAI = ChatOpenAI(model="gpt-4o-mini"),
+        url: str = None,
     ) -> Graph:
-        # if agent_type not in AgentType.value:
-        #     raise ValueError(f"Unsupported agent type: {agent_name}")
-
-        # agent_config = cls._AGENT_CONFIGS[agent_name.value].copy()
-        # system_message = kwargs.get("system_message", agent_config["system_message"])
-        # node_name = kwargs.get("node_name", agent_config["node_name"])
-        # agent_type = kwargs.get("agent_type", agent_config["type"])
-
         if agent_type == AgentType.ASSISTANT.value:
-            return cls.create_assistant_agent(
-                llm=llm
-            )
+            return ChatAgent(llm)
+        elif agent_type == AgentType.READER.value:
+            return RAGAgent(llm, url)
         else:
             raise ValueError(f"Unsupported agent type: {agent_type}")
 
