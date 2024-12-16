@@ -147,7 +147,7 @@ class ReaderAgent(BaseAgent):
         response = self.grading_model.invoke(msg)
         return {"messages": [response]}
 
-    def grade_documents(state) -> Literal["generate", "rewrite"]:
+    def grade_documents(self, state) -> Literal["generate", "rewrite"]:
         """
         Determines whether the retrieved documents are relevant to the question.
 
