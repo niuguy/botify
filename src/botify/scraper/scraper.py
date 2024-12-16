@@ -10,7 +10,10 @@ class Scraper:
     def run(self) -> List[Document]:
         with ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(self.scrape_url, url) for url in self.urls]
-            return [future.result() for future in futures]
+            results = []
+            for future in futures:
+                results.extend(future.result())
+            return results
 
     def scrape_url(self, url: str) -> List[Document]:
         if url.endswith(".pdf"):

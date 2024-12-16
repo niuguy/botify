@@ -23,12 +23,7 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 
-from botify.handlers.base import (
-    help_command,
-    echo,
-    agents,
-    agent_selection_callback,
-)
+from botify.handlers.bot_handler import BotHandler
 from botify.logging.logger import logger
 
 
@@ -39,10 +34,18 @@ def create_app() -> Application:
         .token("7545484988:AAHgIZFvd1Fi52MI9v3HROZgO9MhYFNBGak")
         .build()
     )
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-    app.add_handler(CommandHandler("agents", agents))
+
+    # Create a single instance of BotHandler
+    bot_handler = BotHandler()
+
+    # Register handlers using methods from the BotHandler instance
+    # app.add_handler(CommandHandler("help", bot_handler.help_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_handler.echo))
+    app.add_handler(CommandHandler("agents", bot_handler.agents))
     app.add_handler(
-        CallbackQueryHandler(agent_selection_callback, pattern="^select_agent:")
+        CallbackQueryHandler(
+            bot_handler.agent_selection_callback, pattern="^select_agent:"
+        )
     )
+
     return app

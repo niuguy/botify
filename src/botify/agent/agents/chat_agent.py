@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph, START
 from langgraph.graph import Graph
 from botify.logging.logger import logger
 from botify.agent.agent_tools import tools, tool_node
+from botify.agent.agents.base_agent import BaseAgent
 
 
 class AgentState(TypedDict):
@@ -17,7 +18,7 @@ class AgentState(TypedDict):
     next: str | None
 
 
-class ChatAgent:
+class ChatAgent(BaseAgent):
     """Wrapper class for LLM that manages chat history."""
 
     def __init__(self, llm: ChatOpenAI):

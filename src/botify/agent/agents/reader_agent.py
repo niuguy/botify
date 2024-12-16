@@ -12,19 +12,21 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import PromptTemplate
 from langchain import hub
 from langgraph.graph import Graph, StateGraph, START, END
-from langgraph.graph.message import add_messages
 from langgraph.prebuilt import tools_condition
+from langgraph.prebuilt import ToolNode
 from langchain_core.runnables import RunnableConfig
 import tempfile
 import shutil
-from langchain.tools import Tool
+from langchain.tools.retriever import create_retriever_tool
+from botify.scraper.scraper import Scraper
+from botify.agent.agents.base_agent import BaseAgent
 
 
 class RagAgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
 
 
-class RAGAgent:
+class ReaderAgent(BaseAgent):
     """Agent that handles RAG (Retrieval Augmented Generation) operations."""
 
     def __init__(self, llm: ChatOpenAI, url: str):
@@ -47,7 +49,21 @@ class RAGAgent:
         self.vectorstore = None
         self.retriever = None
         self.persist_dir = None
+        self.retriever_tool = None
         self.chat_model_with_tools = None
+        print(f"Debug - URL: {url}")
+        if url:
+            documents = self.scrape_url(url)
+            self.set_context_documents(documents)
+
+    def scrape_url(self, url: str) -> List[Document]:
+        """Scrape the url and return the documents."""
+        logger.info(f"Scraping URL: {url}")
+        print(f"Debug - Scraping URL: {url}")
+        scraper = Scraper([url])
+
+        documents = scraper.run()
+        return documents
 
     def set_context_documents(self, documents: List[Document]) -> None:
         """Sets new documents as the context for the next interaction.
@@ -82,14 +98,14 @@ class RAGAgent:
         self.retriever = self.vectorstore.as_retriever()
 
         # Create new retriever tool
-        retriever_tool = Tool(
-            name="retrieve_blog_posts",
-            description="Search and return information about blog posts",
-            func=self.retriever.get_relevant_documents,
+        self.retriever_tool = create_retriever_tool(
+            self.retriever,
+            name="retrieve_web_content",
+            description="Search and return information about web content",
         )
 
         # Bind the new tool to the chat model
-        self.chat_model_with_tools = self.chat_model.bind_tools([retriever_tool])
+        self.chat_model_with_tools = self.chat_model.bind_tools([self.retriever_tool])
 
     def __del__(self):
         """Cleanup temporary directory when the agent is destroyed."""
@@ -221,13 +237,13 @@ class RAGAgent:
         # Run
         response = rag_chain.invoke({"context": docs, "question": question})
         return {"messages": [response]}
-    
+
     def generate_flow(self) -> Graph:
         workflow = StateGraph(RagAgentState)
 
         # Define the nodes we will cycle between
         workflow.add_node("agent", self.agent)  # Agent decision node
-        workflow.add_node("retrieve", self.retriever)  # Retrieval node
+        workflow.add_node("retrieve", ToolNode([self.retriever_tool]))  # Retrieval node
         workflow.add_node("rewrite", self.rewrite)  # Query rewriting node
         workflow.add_node("generate", self.generate)  # Response generation node
 
@@ -250,8 +266,8 @@ class RAGAgent:
             self.grade_documents,
             {
                 "generate": "generate",  # If documents relevant, generate response
-                "rewrite": "rewrite",    # If documents not relevant, rewrite query
-            }
+                "rewrite": "rewrite",  # If documents not relevant, rewrite query
+            },
         )
 
         # Final edges
@@ -261,9 +277,5 @@ class RAGAgent:
         return workflow.compile()
 
     def run(self, inputs: dict, config: RunnableConfig):
-        #set context documents
-        if "documents" in inputs:
-            self.set_context_documents(inputs["documents"])
-            return self.generate_flow().invoke(inputs, config)
-        else:
-            raise ValueError("No documents provided")
+        # set context documents
+        return self.generate_flow().invoke(inputs, config)

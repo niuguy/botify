@@ -1,5 +1,5 @@
-from telegram import ForceReply, Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes
 from langchain_core.messages import HumanMessage
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from botify.logging.logger import logger
@@ -33,19 +33,21 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get("waiting_for_url"):
         url = update.message.text
         session_id = str(uuid.uuid4())
-        
+
         try:
             # Create RAG agent with the provided URL
             agent = AgentFactory.create("reader", url=url)
             context.user_data["current_agent"] = agent
             context.user_data["session_id"] = session_id
             context.user_data["waiting_for_url"] = False  # Reset the waiting state
-            
+
             await update.message.reply_text(f"Reader agent created with URL: {url}")
             return
         except Exception as e:
             logger.error(f"Error creating reader agent: {str(e)}")
-            await update.message.reply_text("Invalid URL or error creating reader agent. Please try again.")
+            await update.message.reply_text(
+                "Invalid URL or error creating reader agent. Please try again."
+            )
             return
 
     # Check if an agent is selected
@@ -57,8 +59,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "Please select an agent first using /agents command"
         )
         return
-    
-
 
     try:
         # Execute the agent's graph with the user's message
@@ -114,7 +114,7 @@ async def agent_selection_callback(
         context.user_data["waiting_for_url"] = True
         await query.edit_message_text("Please send the web URL you want to read")
         return
-    
+
     session_id = str(uuid.uuid4())
 
     agent = AgentFactory.create(agent_name)

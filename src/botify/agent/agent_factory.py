@@ -1,93 +1,63 @@
+import importlib
+import inspect
+from pathlib import Path
+from typing import Type, Dict
+from botify.agent.agents.base_agent import BaseAgent
 from langchain_openai import ChatOpenAI
-from langgraph.graph import Graph
-from botify.agent.agent_base import ChatAgent
-from botify.agent.rag_agent import RAGAgent 
-from enum import Enum
-
-
-class AgentType(Enum):
-    ASSISTANT = "assistant"
-    RESEARCHER = "researcher"
-    READER = "reader"
-    SCHEDULER = "scheduler"
 
 
 class AgentFactory:
-    """Factory class for creating LangGraph-based agents."""
+    """Factory class for creating agents with automatic loading."""
+
+    _agent_classes: Dict[str, Type[BaseAgent]] = {}
 
     @classmethod
-    def create_assistant_agent(cls, llm: ChatOpenAI) -> Graph:
-        agent_model = ChatAgent(llm)
+    def _load_agents(cls):
+        """Automatically load all agent classes from the agents directory."""
+        if not cls._agent_classes:
+            # Get the directory containing the agent modules
+            agents_dir = Path(__file__).parent / "agents"
 
-        return agent_model
+            # Iterate through all python files in the directory
+            for file_path in agents_dir.glob("*_agent.py"):
+                if file_path.stem == "base_agent":
+                    continue
 
-    @classmethod
-    def create_rag_agent(cls, llm: ChatOpenAI) -> Graph:
-        """Creates a RAG-based agent workflow.
+                # Import the module
+                module_name = f"botify.agent.agents.{file_path.stem}"
+                module = importlib.import_module(module_name)
 
-        Args:
-            llm (ChatOpenAI): The language model to use for the agent
-
-        Returns:
-            Graph: Compiled workflow graph for RAG operations
-        """
-        pass
-        # # Initialize RAG agent
-        # rag_agent = RAGAgent()
-
-        # # Create workflow
-        # workflow = StateGraph(RagAgentState)
-
-        # # Define the nodes we will cycle between
-        # workflow.add_node("agent", rag_agent.agent)  # Agent decision node
-        # workflow.add_node("retrieve", retriever_tool_node)  # Retrieval node
-        # workflow.add_node("rewrite", rag_agent.rewrite)  # Query rewriting node
-        # workflow.add_node("generate", rag_agent.generate)  # Response generation node
-
-        # # Initial edge: Start -> Agent
-        # workflow.add_edge(START, "agent")
-
-        # # Agent decision edges
-        # workflow.add_conditional_edges(
-        #     "agent",
-        #     tools_condition,
-        #     {
-        #         "tools": "retrieve",  # If tools needed, go to retrieve
-        #         END: END,  # If no tools needed, end
-        #     },
-        # )
-
-        # # Retrieval result edges
-        # workflow.add_conditional_edges(
-        #     "retrieve",
-        #     rag_agent.grade_documents,
-        #     {
-        #         "generate": "generate",  # If documents relevant, generate response
-        #         "rewrite": "rewrite",    # If documents not relevant, rewrite query
-        #     }
-        # )
-
-        # # Final edges
-        # workflow.add_edge("generate", END)  # Generation complete -> End
-        # workflow.add_edge("rewrite", "agent")  # After rewrite -> Back to agent
-
-        # return workflow.compile()
+                # Find all classes that inherit from BaseAgent
+                for name, obj in inspect.getmembers(module):
+                    if (
+                        inspect.isclass(obj)
+                        and issubclass(obj, BaseAgent)
+                        and obj != BaseAgent
+                    ):
+                        # Convert class name to agent type (e.g., RAGAgent -> rag)
+                        agent_type = name.lower().replace("agent", "")
+                        cls._agent_classes[agent_type] = obj
 
     @classmethod
-    def create(
-        cls,
-        agent_type: str,
-        llm: ChatOpenAI = ChatOpenAI(model="gpt-4o-mini"),
-        url: str = None,
-    ) -> Graph:
-        if agent_type == AgentType.ASSISTANT.value:
-            return ChatAgent(llm)
-        elif agent_type == AgentType.READER.value:
-            return RAGAgent(llm, url)
-        else:
+    def create(cls, agent_type: str, llm: ChatOpenAI = None, **kwargs) -> BaseAgent:
+        """Create an agent instance of the specified type."""
+        cls._load_agents()
+
+        if agent_type not in cls._agent_classes:
             raise ValueError(f"Unsupported agent type: {agent_type}")
 
+        agent_class = cls._agent_classes[agent_type]
+
+        return agent_class(llm, **kwargs)
+
     @classmethod
-    def get_agent_list(cls) -> list[AgentType]:
+    def get_available_agents(cls) -> list[str]:
         """Get a list of available agent types."""
-        return [agent.value for agent in AgentType]
+        cls._load_agents()
+        return list(cls._agent_classes.keys())
+
+    @classmethod
+    def get_agent_list(cls) -> list[str]:
+        """Get a list of available agent types."""
+        cls._load_agents()
+        return list(cls._agent_classes.keys())
