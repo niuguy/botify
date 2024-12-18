@@ -1,15 +1,20 @@
 from datetime import datetime
 from typing import Optional, Dict
 from langchain_core.messages import HumanMessage
+from langfuse.callback import CallbackHandler
 from botify.agent.agent_factory import AgentFactory
 from botify.models.agent_session import AgentSession
 from botify.logging.logger import logger
 import uuid
-
+# import os
+# os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-f7ccb979-fded-40b4-8e7f-ad4d6b3fca59"
+# os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-6acdc48a-5278-49a0-a405-b593d43ea74a"
+# os.environ["LANGFUSE_HOST"] = "http://localhost:3000"
 
 class AgentService:
     def __init__(self):
         self.sessions: Dict[str, AgentSession] = {}
+        self.langfuse_callback = CallbackHandler()
 
     def create_agent(self, agent_type: str, **kwargs) -> AgentSession:
         """Create a new agent and return AgentSession"""  
@@ -51,7 +56,7 @@ class AgentService:
             
             result = session.agent.run(
                 {"messages": [HumanMessage(content=message)]},
-                config={"configurable": {"session_id": session_id}},
+                config={"configurable": {"session_id": session_id}, "callbacks": [self.langfuse_callback]},
             )
             return result["messages"][-1].content
         except Exception as e:

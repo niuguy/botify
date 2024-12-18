@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-
+from botify.agent.agents.base_agent import BaseAgent
 
 @dataclass
 class AgentSession:
@@ -9,4 +9,4 @@ class AgentSession:
     created_at: datetime
     last_used: datetime
     metadata: dict
-    agent: object  # The actual agent instance
+    agent: BaseAgent  # The actual agent instance

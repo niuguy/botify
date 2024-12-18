@@ -7,12 +7,6 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import Graph
 
 
-class AgentState(TypedDict):
-    """State definition for the agent graph."""
-
-    messages: list[BaseMessage]
-    next: str | None
-
 
 class BaseAgent(ABC):
     """Abstract base class for all agents."""

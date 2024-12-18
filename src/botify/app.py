@@ -25,13 +25,15 @@ from telegram.ext import (
 
 from botify.handlers.bot_handler import BotHandler
 from botify.logging.logger import logger
+import os
 
 
 def create_app() -> Application:
+    TELE_BOT_TOKEN = os.getenv("TELE_BOT_TOKEN")
     logger.info("Creating app")
     app = (
         Application.builder()
-        .token("7545484988:AAHgIZFvd1Fi52MI9v3HROZgO9MhYFNBGak")
+        .token(TELE_BOT_TOKEN)
         .build()
     )
 
