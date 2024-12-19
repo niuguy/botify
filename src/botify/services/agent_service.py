@@ -6,10 +6,6 @@ from botify.agent.agent_factory import AgentFactory
 from botify.models.agent_session import AgentSession
 from botify.logging.logger import logger
 import uuid
-# import os
-# os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-f7ccb979-fded-40b4-8e7f-ad4d6b3fca59"
-# os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-6acdc48a-5278-49a0-a405-b593d43ea74a"
-# os.environ["LANGFUSE_HOST"] = "http://localhost:3000"
 
 class AgentService:
     def __init__(self):

@@ -39,7 +39,7 @@ class AgentFactory:
                         cls._agent_classes[agent_type] = obj
 
     @classmethod
-    def create(cls, agent_type: str, llm: ChatOpenAI = None, **kwargs) -> BaseAgent:
+    def create(cls, agent_type: str, llm: ChatOpenAI=ChatOpenAI(model="gpt-4o-mini"), **kwargs) -> BaseAgent:
         """Create an agent instance of the specified type."""
         cls._load_agents()
 
