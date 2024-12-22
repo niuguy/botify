@@ -28,17 +28,19 @@ from botify.logging.logger import logger
 import os
 
 
+
 def create_app() -> Application:
     TELE_BOT_TOKEN = os.getenv("TELE_BOT_TOKEN")
     logger.info("Creating app")
+    bot_handler = BotHandler()
     app = (
         Application.builder()
-        .token(TELE_BOT_TOKEN)
+        .token(TELE_BOT_TOKEN).post_init(bot_handler.post_init)
         .build()
     )
 
     # Create a single instance of BotHandler
-    bot_handler = BotHandler()
+    
 
     # Register handlers using methods from the BotHandler instance
     # app.add_handler(CommandHandler("help", bot_handler.help_command))

@@ -23,10 +23,10 @@ class ResearcherAgentState(TypedDict):
     sections: List[Dict[str, str]]
     final_report: str
 
-search_tool = TavilySearchResults(max_results=2)
+search_tool = TavilySearchResults(max_results=1)
 
 
-
+#FIXME to be tested
 class ResearcherAgent(BaseAgent):
     def __init__(self, llm):
         super().__init__(llm)
@@ -58,6 +58,7 @@ class ResearcherAgent(BaseAgent):
     def search_for_info(self, state: ResearcherAgentState) -> ResearcherAgentState:
         """Perform search based on query and store results"""
         query = state["messages"][-1]
+        
         results = search_tool.invoke(query)
         state["search_results"] = results
         return state
@@ -65,7 +66,7 @@ class ResearcherAgent(BaseAgent):
     # Process search results into reference documents
     async def fetch_url_content(self, session: aiohttp.ClientSession, url: str) -> Dict[str, str]:
         """Fetch and parse content from a URL"""
-        print("fetching url", url)
+        logger.info(f"fetching url {url}")
         try:
             async with session.get(url, timeout=30) as response:
                 if response.status == 200:
@@ -105,7 +106,7 @@ class ResearcherAgent(BaseAgent):
     def process_references(self, state: ResearcherAgentState) -> ResearcherAgentState:
         """Convert search results into structured reference documents with full content"""
         # Extract URLs from search results
-        print("search_results", state["search_results"])
+        logger.info("processing references")
         urls = [result["url"] for result in state["search_results"]]
         
         # Run async crawling in a thread pool

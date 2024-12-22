@@ -50,6 +50,11 @@ class BotHandler:
                 "Invalid URL or error creating reader agent. Please try again."
             )
 
+    async def post_init(self, application) -> None:
+        available_agents = self.agent_service.get_available_agents()
+        commands =[(agent_name,"") for agent_name in available_agents]
+        await application.bot.set_my_commands(commands)
+
     async def agents(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /agents command"""
         available_agents = self.agent_service.get_available_agents()

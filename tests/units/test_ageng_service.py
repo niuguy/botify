@@ -84,7 +84,6 @@ class TestAgentService:
         assert result == expected_agents
         mock_factory.get_agent_list.assert_called_once()
 
-    @pytest.mark.asyncio
     async def test_process_message_success(self, agent_service, mock_agent):
         # Arrange
         message = "test message"
@@ -101,7 +100,6 @@ class TestAgentService:
         assert isinstance(call_args["messages"][0], HumanMessage)
         assert call_args["messages"][0].content == message
 
-    @pytest.mark.asyncio
     async def test_process_message_failure(self, agent_service, mock_agent):
         # Arrange
         mock_agent.run.side_effect = Exception("Test error")
@@ -110,3 +108,4 @@ class TestAgentService:
         with pytest.raises(Exception) as exc_info:
             await agent_service.process_message("test", mock_agent, "test_session")
         assert str(exc_info.value) == "Test error"
+

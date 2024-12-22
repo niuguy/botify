@@ -1,29 +1,27 @@
-chat
-    - text
-    - tts
-    - tools
-read
-    - rag
-    - read paper
-research
-    - deep research report
+# Botify
 
-scheduler
-    - 
+A telegram bot framework for building AI agents. built with langgraph and langchain.
 
 
+## Installation
+
+```bash
+make install
+```
+
+## Configuration
+
+Use environment variable `TELE_BOT_TOKEN` to set your telegram bot token.
+
+## Run the bot
+
+```bash
+make run
+```
+## Use the bot
 
 
+On telegram, select /agents to see the list of agents. 
 
 
-TODO:
-- add tools to agents
-- add rag agent
-- add multi-agents
-- optimize inline keyboard
-- setup Mini appUI for agents management
-
-
-reference:
-- https://github.com/phidatahq/phidata/tree/main/phi
-- https://github.com/freqtrade/freqtrade/blob/develop/freqtrade/freqtradebot.py
+## Add new agent

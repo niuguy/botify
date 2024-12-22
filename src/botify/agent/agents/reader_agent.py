@@ -55,6 +55,7 @@ class ReaderAgent(BaseAgent):
         if url:
             documents = self.scrape_url(url)
             self.set_context_documents(documents)
+        self.flow = self.generate_flow()
 
     def scrape_url(self, url: str) -> List[Document]:
         """Scrape the url and return the documents."""
@@ -278,4 +279,4 @@ class ReaderAgent(BaseAgent):
 
     def run(self, inputs: dict, config: RunnableConfig):
         # set context documents
-        return self.generate_flow().invoke(inputs, config)
+        return self.flow.invoke(inputs, config)
