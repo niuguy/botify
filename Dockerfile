@@ -7,11 +7,18 @@ WORKDIR /app
 # Install uv for faster Python package management
 RUN pip install uv
 
-# Copy project files
+# Copy all files
 COPY . .
+
+# Create virtual environment using uv
+RUN uv venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
 
 # Install project dependencies using uv
 RUN uv pip install -e .
 
+# Create logs directory
+RUN mkdir -p logs
+
 # Command to run the application
-CMD ["python", "-m", "botify.main"]
+CMD ["python", "-m", "botify"]

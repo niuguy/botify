@@ -5,3 +5,5 @@ run:
 format:
 	ruff check . --fix
 	ruff format .
+test:
+	python -m pytest

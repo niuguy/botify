@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: botify-app
+    volumes:
+      - ./botify:/app/botify  # For development: maps local botify dir to container
+    environment:
+      - PYTHONUNBUFFERED=1    # Ensures Python output is sent straight to terminal
+    env_file:
+      - .env                  # Load environment variables from .env file
+    restart: unless-stopped
