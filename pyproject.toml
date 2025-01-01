@@ -21,6 +21,10 @@ dependencies = [
     "beautifulsoup4",
     "unstructured>=0.16.11",
     "langfuse",
+    "livekit-agents>=0.12.6",
+    "livekit-plugins-openai>=0.10.13",
+    "livekit-plugins-deepgram>=0.6.16",
+    "livekit-plugins-silero>=0.7.4",
 ]
 
 [project.scripts]

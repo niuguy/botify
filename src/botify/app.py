@@ -26,8 +26,7 @@ from telegram.ext import (
 from botify.handlers.bot_handler import BotHandler
 from botify.logging.logger import logger
 import os
-
-
+import asyncio
 
 def create_app() -> Application:
     TELE_BOT_TOKEN = os.getenv("TELE_BOT_TOKEN")
@@ -39,11 +38,7 @@ def create_app() -> Application:
         .build()
     )
 
-    # Create a single instance of BotHandler
-    
-
     # Register handlers using methods from the BotHandler instance
-    # app.add_handler(CommandHandler("help", bot_handler.help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_handler.echo))
     app.add_handler(CommandHandler("agents", bot_handler.agents))
     app.add_handler(
@@ -53,3 +48,26 @@ def create_app() -> Application:
     )
 
     return app
+
+def run_bot():
+    app = create_app()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        logger.info("Running bot")
+        loop.run_until_complete(app.initialize())
+        loop.run_until_complete(app.start())
+        loop.run_until_complete(app.updater.start_polling())
+        loop.run_forever()
+    except KeyboardInterrupt:
+        logger.info("Stopping bot")
+    finally:
+        loop.run_until_complete(app.updater.stop())
+        loop.run_until_complete(app.stop())
+        loop.run_until_complete(app.shutdown())
+        loop.close()
+
+def run():
+    logger.info("Starting bot process")
+    run_bot()
